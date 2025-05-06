@@ -26,6 +26,7 @@
             padding: 20px;
             border-right: 1px solid #e0e0e0;
             transition: transform 0.3s ease;
+            z-index: 1000;
         }
         .sidebar h2 {
             font-size: 1.2rem;
@@ -57,6 +58,18 @@
         .content h1 {
             font-size: 1.8rem;
             margin-bottom: 20px;
+        }
+        .hamburger {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 5px;
+            z-index: 1100;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 10px;
         }
         .form-group {
             margin-bottom: 20px;
@@ -222,8 +235,17 @@
             margin-top: 20px;
         }
         @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+            .hamburger.hidden {
+                display: none;
+            }
             .sidebar {
                 position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
                 transform: translateX(-100%);
             }
             .sidebar.active {
@@ -231,17 +253,34 @@
             }
             .content {
                 padding: 20px;
+                padding-top: 60px;
             }
             .scorecard {
                 display: block;
                 margin-right: 0;
             }
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+            .overlay.active {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+    <br>
     <div class="container">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <h2>TimeSpent</h2>
             <button onclick="showPage('create-task')">Create Task</button>
             <button onclick="showPage('timer')" class="active">Timer</button>
@@ -301,6 +340,28 @@
         let journalSearchResults = [];
         let cachedTasks = [];
 
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const hamburger = document.querySelector('.hamburger');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            if (sidebar.classList.contains('active')) {
+                hamburger.classList.add('hidden');
+            } else {
+                hamburger.classList.remove('hidden');
+            }
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const hamburger = document.querySelector('.hamburger');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            hamburger.classList.remove('hidden');
+        }
+
         async function fetchTasks() {
             if (cachedTasks.length) return cachedTasks;
             try {
@@ -327,6 +388,7 @@
             content.innerHTML = '';
             document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`.sidebar button[onclick="showPage('${page}')"]`)?.classList.add('active');
+            closeSidebar();
 
             const tasks = await fetchTasks();
             if (page === 'create-task') {
@@ -650,7 +712,7 @@
 
         async function showJournalModal(journalId) {
             try {
-                currentJournalId = journalId;
+                currentJournalId = journalව
                 const response = await fetch(`http://localhost:8000/journals/details/${journalId}`);
                 if (!response.ok) throw new Error('Failed to fetch journal details');
                 const journal = await response.json();
@@ -679,7 +741,7 @@
             const tableBody = document.getElementById('journal-table-body');
             tableBody.innerHTML = filteredJournals.length === 0 ? '<tr><td colspan="3">No matching journals found.</td></tr>' : filteredJournals.map(journal => `
                 <tr onclick="showJournalModal('${journal.journal_id}')">
-                    <td>${new Date(journal.created_at).toLocaleDateString()}</td>
+                    <td>${new Date(journal.rcreated_at).toLocaleDateString()}</td>
                     <td>${journal.title || 'Untitled'}</td>
                     <td>${journal.milestone || '-'}</td>
                 </tr>
@@ -744,5 +806,3 @@
         // Initialize with Timer page
         showPage('timer');
     </script>
-</body>
-</html>
